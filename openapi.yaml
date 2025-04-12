@@ -1,0 +1,549 @@
+openapi: 3.0.0
+info:
+  title: WeLocal Farmers Service API
+  description: API для управления фермерскими хозяйствами и продукцией
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:10415
+    description: Локальный сервер разработки
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Farm:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        ownerId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        location:
+          type: object
+          properties:
+            address:
+              type: string
+            latitude:
+              type: number
+              format: float
+            longitude:
+              type: number
+              format: float
+        contactInfo:
+          type: object
+          properties:
+            phone:
+              type: string
+            email:
+              type: string
+            website:
+              type: string
+        certification:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, PENDING]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        farmId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+          format: float
+        unit:
+          type: string
+        quantity:
+          type: number
+          format: float
+        images:
+          type: array
+          items:
+            type: string
+        isOrganic:
+          type: boolean
+        seasonality:
+          type: array
+          items:
+            type: string
+            enum: [SPRING, SUMMER, AUTUMN, WINTER]
+        status:
+          type: string
+          enum: [AVAILABLE, OUT_OF_STOCK, SEASONAL]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+paths:
+  /farms:
+    get:
+      summary: Получение списка ферм
+      tags:
+        - Фермы
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [ACTIVE, INACTIVE, PENDING]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Успешное получение списка ферм
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Farm'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '401':
+          description: Не авторизован
+        '500':
+          description: Внутренняя ошибка сервера
+
+    post:
+      summary: Создание новой фермы
+      tags:
+        - Фермы
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+                - location
+                - contactInfo
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                location:
+                  type: object
+                  required:
+                    - address
+                    - latitude
+                    - longitude
+                  properties:
+                    address:
+                      type: string
+                    latitude:
+                      type: number
+                      format: float
+                    longitude:
+                      type: number
+                      format: float
+                contactInfo:
+                  type: object
+                  required:
+                    - phone
+                    - email
+                  properties:
+                    phone:
+                      type: string
+                    email:
+                      type: string
+                    website:
+                      type: string
+                certification:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Ферма успешно создана
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Farm'
+        '400':
+          description: Неверные данные
+        '401':
+          description: Не авторизован
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /farms/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получение информации о ферме
+      tags:
+        - Фермы
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение информации о ферме
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Farm'
+        '404':
+          description: Ферма не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+    put:
+      summary: Обновление информации о ферме
+      tags:
+        - Фермы
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                location:
+                  type: object
+                  properties:
+                    address:
+                      type: string
+                    latitude:
+                      type: number
+                      format: float
+                    longitude:
+                      type: number
+                      format: float
+                contactInfo:
+                  type: object
+                  properties:
+                    phone:
+                      type: string
+                    email:
+                      type: string
+                    website:
+                      type: string
+                certification:
+                  type: array
+                  items:
+                    type: string
+                status:
+                  type: string
+                  enum: [ACTIVE, INACTIVE, PENDING]
+      responses:
+        '200':
+          description: Ферма успешно обновлена
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Farm'
+        '400':
+          description: Неверные данные
+        '401':
+          description: Не авторизован
+        '404':
+          description: Ферма не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+    delete:
+      summary: Удаление фермы
+      tags:
+        - Фермы
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Ферма успешно удалена
+        '401':
+          description: Не авторизован
+        '404':
+          description: Ферма не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /farms/{id}/products:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получение списка продуктов фермы
+      tags:
+        - Продукты
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: category
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [AVAILABLE, OUT_OF_STOCK, SEASONAL]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Успешное получение списка продуктов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  limit:
+                    type: integer
+        '401':
+          description: Не авторизован
+        '404':
+          description: Ферма не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+    post:
+      summary: Добавление нового продукта
+      tags:
+        - Продукты
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - description
+                - category
+                - price
+                - unit
+                - quantity
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                price:
+                  type: number
+                  format: float
+                unit:
+                  type: string
+                quantity:
+                  type: number
+                  format: float
+                images:
+                  type: array
+                  items:
+                    type: string
+                isOrganic:
+                  type: boolean
+                seasonality:
+                  type: array
+                  items:
+                    type: string
+                    enum: [SPRING, SUMMER, AUTUMN, WINTER]
+      responses:
+        '201':
+          description: Продукт успешно добавлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Неверные данные
+        '401':
+          description: Не авторизован
+        '404':
+          description: Ферма не найдена
+        '500':
+          description: Внутренняя ошибка сервера
+
+  /farms/{farmId}/products/{productId}:
+    parameters:
+      - in: path
+        name: farmId
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - in: path
+        name: productId
+        required: true
+        schema:
+          type: string
+          format: uuid
+    get:
+      summary: Получение информации о продукте
+      tags:
+        - Продукты
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Успешное получение информации о продукте
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Ферма или продукт не найдены
+        '500':
+          description: Внутренняя ошибка сервера
+
+    put:
+      summary: Обновление информации о продукте
+      tags:
+        - Продукты
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                price:
+                  type: number
+                  format: float
+                unit:
+                  type: string
+                quantity:
+                  type: number
+                  format: float
+                images:
+                  type: array
+                  items:
+                    type: string
+                isOrganic:
+                  type: boolean
+                seasonality:
+                  type: array
+                  items:
+                    type: string
+                    enum: [SPRING, SUMMER, AUTUMN, WINTER]
+                status:
+                  type: string
+                  enum: [AVAILABLE, OUT_OF_STOCK, SEASONAL]
+      responses:
+        '200':
+          description: Продукт успешно обновлен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          description: Неверные данные
+        '401':
+          description: Не авторизован
+        '404':
+          description: Ферма или продукт не найдены
+        '500':
+          description: Внутренняя ошибка сервера
+
+    delete:
+      summary: Удаление продукта
+      tags:
+        - Продукты
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Продукт успешно удален
+        '401':
+          description: Не авторизован
+        '404':
+          description: Ферма или продукт не найдены
+        '500':
+          description: Внутренняя ошибка сервера 
